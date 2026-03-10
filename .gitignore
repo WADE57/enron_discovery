@@ -10,4 +10,4 @@ media/
 venv/
 
 .vscode/
-.DS_Store
+.DS_Storedata/emails.csv
