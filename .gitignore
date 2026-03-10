@@ -1,5 +1,13 @@
 maildir/
 *.tar.gz
 __pycache__/
+*.pyc
+
 *.db
 media/
+
+.env
+venv/
+
+.vscode/
+.DS_Store
