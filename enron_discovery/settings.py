@@ -73,10 +73,21 @@ WSGI_APPLICATION = 'enron_discovery.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'enron_db',
+        'USER': 'enron',
+        'PASSWORD': 'enron2026',
+        'HOST': 'localhost',
+        'PORT': '5433',               # ← très important : 5433 (pas 5432)
     }
 }
 

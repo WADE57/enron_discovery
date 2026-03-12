@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_DB: enron_db
+      POSTGRES_USER: enron
+      POSTGRES_PASSWORD: enron2026
+    ports:
+      - "5433:5432"               # on mappe sur 5433 pour éviter conflit
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
