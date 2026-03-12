@@ -12,3 +12,5 @@ venv/
 .vscode/
 .DS_Storedata/emails.csv
 data/emails.csv
+.venv/
+env/
