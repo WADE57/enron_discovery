@@ -16,13 +16,19 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+<<<<<<< HEAD
 from polls.views import hello_world  # Import the hello_world view
+=======
+# from core.views import hello_world  # Import the hello_world view
+>>>>>>> 642bc81fb4831d9d9e50e6bef85aac49e56e2930
 
 # urlpatterns = [
 #     path('admin/', admin.site.urls),
 # ]
+from django.contrib import admin
+from django.urls import path, include
+
 urlpatterns = [
-    # path("polls/", include("polls.urls")),
-    path("admin/", admin.site.urls),
-    path("", hello_world, name="home"),  # Include URLs from the core app
+    path('admin/', admin.site.urls),
+    path('', include('core.urls')),  # Doit pointer vers core/urls.py
 ]

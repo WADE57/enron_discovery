@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Enron Emails</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .stats {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 30px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        .email-list {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .email-item {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            transition: background 0.3s;
+        }
+
+        .email-item:hover {
+            background: #f9f9f9;
+        }
+
+        .email-subject {
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 8px;
+            font-size: 1.1em;
+        }
+
+        .email-meta {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .email-from {
+            color: #2c3e50;
+        }
+
+        .email-to {
+            max-width: 500px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .email-date {
+            color: #95a5a6;
+        }
+
+        .pagination {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .pagination a,
+        .pagination span {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .pagination .current {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+
+        .pagination a:hover {
+            background: #f0f0f0;
+        }
+
+        .empty-message {
+            padding: 60px;
+            text-align: center;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>📧 Base de données des emails Enron</h1>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value">{{ stats.total_emails }}</div>
+                <div class="stat-label">Emails</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ stats.total_employees }}</div>
+                <div class="stat-label">Employés</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ emails.paginator.num_pages }}</div>
+                <div class="stat-label">Pages</div>
+            </div>
+        </div>
+
+        <div class="email-list">
+            {% if emails %}
+            {% for email in emails %}
+            <div class="email-item">
+                <div class="email-subject">{{ email.subject|default:"(Sans sujet)" }}</div>
+                <div class="email-meta">
+                    <span class="email-from">📤 {{ email.from_employee.email|default:"Inconnu" }}</span>
+                    <span class="email-to">📥 {{ email.to_employees.all|length }} destinataire(s)</span>
+                    <span class="email-date">📅 {{ email.date|date:"d/m/Y H:i"|default:"Date inconnue" }}</span>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-message">
+                <p>Aucun email trouvé dans la base de données.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if emails.has_other_pages %}
+        <div class="pagination">
+            {% if emails.has_previous %}
+            <a href="?page=1">&laquo; Première</a>
+            <a href="?page={{ emails.previous_page_number }}">Précédente</a>
+            {% endif %}
+
+            {% for num in emails.paginator.page_range %}
+            {% if emails.number == num %}
+            <span class="current">{{ num }}</span>
+            {% elif num > emails.number|add:'-3' and num < emails.number|add:'3' %} <a href="?page={{ num }}">{{ num
+                }}</a>
+                {% endif %}
+                {% endfor %}
+
+                {% if emails.has_next %}
+                <a href="?page={{ emails.next_page_number }}">Suivante</a>
+                <a href="?page={{ emails.paginator.num_pages }}">Dernière &raquo;</a>
+                {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</body>
+
+</html>
