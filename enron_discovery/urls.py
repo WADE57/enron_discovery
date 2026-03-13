@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
-from polls.views import hello_world  # Import the hello_world view
+# from polls.views import hello_world  # Import the hello_world view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
