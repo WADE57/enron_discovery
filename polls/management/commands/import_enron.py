@@ -1,202 +1,528 @@
+# import os
+# import re
+# import email
+# from email.utils import parsedate_to_datetime, getaddresses
+
+# from django.core.management.base import BaseCommand
+# from django.contrib.postgres.search import SearchVector
+# from django.db import transaction
+
+# from polls.models import Employee, Email, Folder, Attachment
+
+
+# class Command(BaseCommand):
+#     help = "Import des emails du corpus Enron"
+
+#     def add_arguments(self, parser):
+#         parser.add_argument(
+#             "--path",
+#             type=str,
+#             help="Chemin vers le dossier maildir (racine du corpus Enron)",
+#         )
+
+#     # ---------- Helpers modèle ----------
+
+#     def get_or_create_employee(self, addr):
+#         """
+#         Crée ou récupère un Employee à partir d'une adresse email.
+#         """
+#         if not addr:
+#             return None
+
+#         addr = addr.lower().strip()
+
+#         employee, _ = Employee.objects.get_or_create(
+#             email=addr,
+#             defaults={"name": addr.split("@")[0]},
+#         )
+#         return employee
+
+#     def parse_addresses(self, header):
+#         """
+#         Transforme un header (To, Cc, Bcc, From) en liste d'adresses normalisées.
+#         """
+#         if not header:
+#             return []
+
+#         addresses = getaddresses([header])
+#         return [addr.lower().strip() for name, addr in addresses if addr]
+
+#     # ---------- Nettoyage du corps du mail ----------
+
+#     def clean_body(self, body):
+#         """
+#         Nettoie le corps du texte :
+#         - strip espaces
+#         - coupe les signatures et disclaimers les plus fréquents
+#         - retire les parties 'Original Message' pour éviter les doublons
+#         """
+#         if not body:
+#             return ""
+
+#         # normalisation de base
+#         body = body.strip()
+
+#         # couper à "Original Message" qui répète souvent tout l'historique
+#         body = re.split(
+#             r"\n[- ]*Original Message[- ]*\n",
+#             body,
+#             flags=re.IGNORECASE,
+#         )[0]
+
+#         # couper à partir d'une signature type "--" en fin de mail
+#         body = re.split(r"\n--\s*\n", body)[0]
+
+#         # supprimer quelques disclaimers très verbeux (pattern simplifié)
+#         disclaimer_patterns = [
+#             r"This e-mail.*?may contain confidential information.*",
+#             r"Ce message et toutes les pièces jointes sont confidentiels.*",
+#         ]
+#         for pattern in disclaimer_patterns:
+#             body = re.sub(pattern, "", body, flags=re.IGNORECASE | re.DOTALL)
+
+#         return body.strip()
+
+#     def extract_body(self, msg):
+#         """
+#         Extraction du body texte brut à partir d'un objet email.message.Message,
+#         puis nettoyage basique.
+#         """
+#         body = ""
+
+#         if msg.is_multipart():
+#             for part in msg.walk():
+#                 if part.get_content_type() == "text/plain":
+#                     try:
+#                         body = part.get_payload(decode=True).decode(
+#                             "utf-8", errors="ignore"
+#                         )
+#                         break
+#                     except Exception:
+#                         continue
+#         else:
+#             try:
+#                 body = msg.get_payload(decode=True).decode(
+#                     "utf-8", errors="ignore"
+#                 )
+#             except Exception:
+#                 body = ""
+
+#         return self.clean_body(body)
+
+#     # ---------- Commande principale ----------
+
+#     def handle(self, *args, **options):
+#         root_path = options.get("path")
+
+#         if not root_path:
+#             self.stdout.write("❌ Veuillez fournir --path vers le dossier maildir")
+#             return
+
+#         if not os.path.isdir(root_path):
+#             self.stdout.write(f"❌ Chemin invalide : {root_path}")
+#             return
+
+#         self.stdout.write(f"✅ Début de l'import depuis : {root_path}")
+
+#         # Comptage des fichiers pour la progression
+#         total_files = 0
+#         for _root, _dirs, files in os.walk(root_path):
+#             total_files += len(files)
+#         self.stdout.write(f"📄 Fichiers détectés : {total_files}")
+
+#         processed = 0
+#         imported = 0
+#         errors = 0
+#         skipped = 0
+
+#         # on peut grouper par transaction pour un minimum d'intégrité
+#         with transaction.atomic():
+#             for root, dirs, files in os.walk(root_path):
+
+#                 # nom de dossier (ex: inbox, sent, discussion_threads, etc.)
+#                 folder_name = os.path.basename(root) or "root"
+#                 folder, _ = Folder.objects.get_or_create(name=folder_name)
+
+#                 for file in files:
+#                     processed += 1
+#                     filepath = os.path.join(root, file)
+
+#                     try:
+#                         with open(filepath, "rb") as f:
+#                             msg = email.message_from_binary_file(f)
+
+#                         # --------- Métadonnées principales ---------
+#                         message_id = msg.get("Message-ID", file)
+#                         subject = msg.get("Subject", "") or ""
+#                         date_str = msg.get("Date")
+
+#                         try:
+#                             date = parsedate_to_datetime(date_str) if date_str else None
+#                         except Exception:
+#                             date = None
+
+#                         from_header = msg.get("From")
+
+#                         to_addrs = self.parse_addresses(msg.get("To"))
+#                         cc_addrs = self.parse_addresses(msg.get("Cc"))
+#                         bcc_addrs = self.parse_addresses(msg.get("Bcc"))
+
+#                         in_reply_to = msg.get("In-Reply-To")
+
+#                         body = self.extract_body(msg)
+
+#                         # --------- Expéditeur ---------
+#                         sender_email = self.parse_addresses(from_header)
+#                         sender = None
+#                         if sender_email:
+#                             sender = self.get_or_create_employee(sender_email[0])
+
+#                         # si pas d'expéditeur valide, on ignore le mail
+#                         if not sender:
+#                             skipped += 1
+#                             continue
+
+#                         # --------- Création / récupération de l'Email ---------
+#                         email_obj, created = Email.objects.get_or_create(
+#                             message_id=message_id,
+#                             defaults={
+#                                 "subject": subject,
+#                                 "body": body,
+#                                 "date": date,
+#                                 "from_employee": sender,
+#                                 "folder": folder,
+#                             },
+#                         )
+
+#                         if created:
+#                             imported += 1
+
+#                         # --------- Destinataires ---------
+#                         for addr in to_addrs:
+#                             emp = self.get_or_create_employee(addr)
+#                             if emp:
+#                                 email_obj.to_employees.add(emp)
+
+#                         for addr in cc_addrs:
+#                             emp = self.get_or_create_employee(addr)
+#                             if emp:
+#                                 email_obj.cc_employees.add(emp)
+
+#                         for addr in bcc_addrs:
+#                             emp = self.get_or_create_employee(addr)
+#                             if emp:
+#                                 email_obj.bcc_employees.add(emp)
+
+#                         # --------- Thread (In-Reply-To) ---------
+#                         if in_reply_to:
+#                             try:
+#                                 parent = Email.objects.get(message_id=in_reply_to)
+#                                 email_obj.in_reply_to = parent
+#                                 email_obj.save(update_fields=["in_reply_to"])
+#                             except Email.DoesNotExist:
+#                                 # parent pas encore importé : on ignore silencieusement
+#                                 pass
+
+#                         # --------- Pièces jointes ---------
+#                         for part in msg.walk():
+#                             if part.get_content_disposition() == "attachment":
+#                                 filename = part.get_filename()
+#                                 if filename:
+#                                     payload = part.get_payload(decode=True) or b""
+#                                     Attachment.objects.create(
+#                                         email=email_obj,
+#                                         filename=filename,
+#                                         content_type=part.get_content_type() or "",
+#                                         size=len(payload),
+#                                     )
+
+#                         # --------- Mise à jour du champ de recherche plein texte ---------
+#                         Email.objects.filter(id=email_obj.id).update(
+#                             search_vector=SearchVector("subject", "body")
+#                         )
+
+#                     except Exception as e:
+#                         errors += 1
+#                         self.stdout.write(f"⚠️ Erreur : {filepath} → {e}")
+
+#                     # log de progression toutes les 10000 entrées
+#                     if processed % 10000 == 0:
+#                         self.stdout.write(
+#                             f"Progression : {processed}/{total_files} fichiers, "
+#                             f"{imported} importés, {skipped} ignorés, {errors} erreurs"
+#                         )
+
+#         # Résumé final
+#         self.stdout.write(
+#             f"Résumé : {processed} fichiers traités, "
+#             f"{imported} emails importés, {skipped} ignorés, {errors} erreurs."
+#         )
+#         self.stdout.write("✅ Import terminé.")
+
 import os
-import email
 import re
-from datetime import datetime
+import email
+from email.utils import parsedate_to_datetime, getaddresses
+
 from django.core.management.base import BaseCommand
-from django.db import transaction
-from core.models import Employee, Email
+from django.contrib.postgres.search import SearchVector
+
+from polls.models import Employee, Email, Folder, Attachment
+
 
 class Command(BaseCommand):
-    help = 'Importe les emails du dataset Enron'
+    help = "Import des emails du corpus Enron"
 
     def add_arguments(self, parser):
-        parser.add_argument('--path', type=str, default='enron_mail_20150507', 
-                          help='Chemin vers le dossier des emails Enron')
+        parser.add_argument(
+            "--path",
+            type=str,
+            help="Chemin vers le dossier maildir (racine du corpus Enron)",
+        )
 
-    def extract_email_address(self, email_string):
-        """Extrait l'adresse email d'une chaîne comme 'Nom <email@domain.com>'"""
-        if not email_string:
-            return None
-        # Cherche un pattern d'email entre < >
-        match = re.search(r'<(.+?)>', email_string)
-        if match:
-            return match.group(1).lower()
-        # Sinon, vérifie si la chaîne elle-même est un email
-        if '@' in email_string:
-            return email_string.lower().strip()
-        return None
+    # ---------- Helpers modèle ----------
 
-    def get_or_create_employee(self, email_string):
-        """Crée ou récupère un employé à partir d'une adresse email"""
-        email_addr = self.extract_email_address(email_string)
-        if not email_addr:
+    def get_or_create_employee(self, addr):
+        """
+        Crée ou récupère un Employee à partir d'une adresse email.
+        """
+        if not addr:
             return None
-        
-        employee, created = Employee.objects.get_or_create(
-            email=email_addr,
-            defaults={'name': email_string[:200]}  # On stocke le nom complet si disponible
+
+        addr = addr.lower().strip()
+
+        employee, _ = Employee.objects.get_or_create(
+            email=addr,
+            defaults={"name": addr.split("@")[0]},
         )
         return employee
 
-    def parse_date(self, date_str):
-        """Tente de parser une date email dans différents formats"""
-        if not date_str:
-            return None
-        
-        # Formats courants dans les emails
-        formats = [
-            '%a, %d %b %Y %H:%M:%S %z',
-            '%a, %d %b %Y %H:%M:%S %Z',
-            '%d %b %Y %H:%M:%S %z',
-            '%Y-%m-%d %H:%M:%S%z',
-            '%a, %d %b %Y %H:%M:%S %z (UTC)',
+    def parse_addresses(self, header):
+        """
+        Transforme un header (To, Cc, Bcc, From) en liste d'adresses normalisées.
+        """
+        if not header:
+            return []
+
+        addresses = getaddresses([header])
+        return [addr.lower().strip() for name, addr in addresses if addr]
+
+    # ---------- Nettoyage du corps du mail ----------
+
+    def clean_body(self, body):
+        """
+        Nettoie le corps du texte et limite sa taille pour le FTS.
+        """
+        if not body:
+            return ""
+
+        body = body.strip()
+
+        # couper à "Original Message" qui répète souvent tout l'historique
+        body = re.split(
+            r"\n[- ]*Original Message[- ]*\n",
+            body,
+            flags=re.IGNORECASE,
+        )[0]
+
+        # couper à partir d'une signature type "--" en fin de mail
+        body = re.split(r"\n--\s*\n", body)[0]
+
+        # supprimer quelques disclaimers très verbeux (pattern simplifié)
+        disclaimer_patterns = [
+            r"This e-mail.*?may contain confidential information.*",
+            r"Ce message et toutes les pièces jointes sont confidentiels.*",
         ]
-        
-        for fmt in formats:
+        for pattern in disclaimer_patterns:
+            body = re.sub(pattern, "", body, flags=re.IGNORECASE | re.DOTALL)
+
+        body = body.strip()
+
+        # Limiter la taille pour rester sous la limite tsvector (~1 Mo)
+        MAX_BODY_LEN = 500000  # 500k caractères, ajustable
+        if len(body) > MAX_BODY_LEN:
+            body = body[:MAX_BODY_LEN]
+
+        return body
+
+    def extract_body(self, msg):
+        """
+        Extraction du body texte brut à partir d'un objet email.message.Message,
+        puis nettoyage basique.
+        """
+        body = ""
+
+        if msg.is_multipart():
+            for part in msg.walk():
+                if part.get_content_type() == "text/plain":
+                    try:
+                        body = part.get_payload(decode=True).decode(
+                            "utf-8", errors="ignore"
+                        )
+                        break
+                    except Exception:
+                        continue
+        else:
             try:
-                # Nettoie la chaîne de date
-                clean_date = date_str.strip()
-                return datetime.strptime(clean_date, fmt)
-            except (ValueError, TypeError):
-                continue
-        return None
-
-    def parse_email_file(self, filepath):
-        """Parse un fichier email et retourne ses composants"""
-        try:
-            with open(filepath, 'rb') as f:
-                msg = email.message_from_binary_file(f)
-            
-            # Extraction des métadonnées
-            from_addr = msg.get('from', '')
-            to_addr = msg.get('to', '')
-            cc_addr = msg.get('cc', '')
-            subject = msg.get('subject', '')
-            date_str = msg.get('date', '')
-            message_id = msg.get('message-id', '') or msg.get('Message-ID', '') or os.path.basename(filepath)
-            
-            # Extraction du corps
-            body = ""
-            if msg.is_multipart():
-                for part in msg.walk():
-                    content_type = part.get_content_type()
-                    if content_type == "text/plain":
-                        try:
-                            body = part.get_payload(decode=True).decode('utf-8', errors='ignore')
-                            break
-                        except:
-                            continue
-                    elif content_type == "text/html" and not body:
-                        # Fallback sur HTML si pas de texte
-                        try:
-                            body = part.get_payload(decode=True).decode('utf-8', errors='ignore')
-                        except:
-                            continue
-            else:
-                try:
-                    body = msg.get_payload(decode=True).decode('utf-8', errors='ignore')
-                except:
-                    body = msg.get_payload()
-            
-            return {
-                'message_id': message_id.strip('<>'),
-                'from': from_addr,
-                'to': to_addr,
-                'cc': cc_addr,
-                'subject': subject,
-                'date': self.parse_date(date_str),
-                'body': body[:50000]  # Limite la taille pour éviter les problèmes
-            }
-        except Exception as e:
-            self.stdout.write(self.style.WARNING(f"Erreur lors du parsing de {filepath}: {e}"))
-            return None
-
-    def walk_directory(self, path):
-        """Parcourt récursivement un dossier et retourne tous les fichiers"""
-        email_files = []
-        for root, dirs, files in os.walk(path):
-            for file in files:
-                if not file.startswith('.'):  # Ignore les fichiers cachés
-                    email_files.append(os.path.join(root, file))
-        return email_files
-
-    @transaction.atomic
-    def handle(self, *args, **options):
-        path = options['path']
-        
-        if not os.path.exists(path):
-            self.stdout.write(self.style.ERROR(f"Le dossier {path} n'existe pas"))
-            return
-        
-        self.stdout.write(self.style.SUCCESS(f"Recherche des emails dans {path}..."))
-        
-        # Trouve tous les fichiers email
-        email_files = self.walk_directory(path)
-        total_files = len(email_files)
-        
-        self.stdout.write(f"Trouvé {total_files} fichiers à traiter")
-        
-        # Compteurs pour le rapport
-        imported = 0
-        skipped = 0
-        errors = 0
-        
-        # Traite chaque fichier
-        for i, filepath in enumerate(email_files, 1):
-            if i % 1000 == 0:
-                self.stdout.write(f"Progression: {i}/{total_files} fichiers traités")
-            
-            try:
-                # Parse l'email
-                email_data = self.parse_email_file(filepath)
-                if not email_data:
-                    errors += 1
-                    continue
-                
-                # Récupère ou crée l'expéditeur
-                from_employee = self.get_or_create_employee(email_data['from'])
-                if not from_employee:
-                    skipped += 1
-                    continue
-                
-                # Crée l'email
-                email_obj, created = Email.objects.get_or_create(
-                    message_id=email_data['message_id'],
-                    defaults={
-                        'from_employee': from_employee,
-                        'subject': email_data['subject'][:500],  # Limite la longueur
-                        'body': email_data['body'],
-                        'date': email_data['date']
-                    }
+                body = msg.get_payload(decode=True).decode(
+                    "utf-8", errors="ignore"
                 )
-                
-                if created:
-                    # Traite les destinataires TO
-                    if email_data['to']:
-                        for to_addr in email_data['to'].split(','):
-                            to_employee = self.get_or_create_employee(to_addr.strip())
-                            if to_employee:
-                                email_obj.to_employees.add(to_employee)
-                    
-                    # Traite les destinataires CC
-                    if email_data['cc']:
-                        for cc_addr in email_data['cc'].split(','):
-                            cc_employee = self.get_or_create_employee(cc_addr.strip())
-                            if cc_employee:
-                                email_obj.to_employees.add(cc_employee)
-                    
-                    imported += 1
-                
-            except Exception as e:
-                self.stdout.write(self.style.WARNING(f"Erreur sur {filepath}: {e}"))
-                errors += 1
-        
-        # Rapport final
-        self.stdout.write(self.style.SUCCESS(f"""
-        ========== RAPPORT D'IMPORTATION ==========
-        Fichiers trouvés : {total_files}
-        Emails importés  : {imported}
-        Ignorés          : {skipped}
-        Erreurs          : {errors}
-        ==========================================
-        """))
+            except Exception:
+                body = ""
+
+        return self.clean_body(body)
+
+    # ---------- Commande principale ----------
+
+    def handle(self, *args, **options):
+        root_path = options.get("path")
+
+        if not root_path:
+            self.stdout.write("❌ Veuillez fournir --path vers le dossier maildir")
+            return
+
+        if not os.path.isdir(root_path):
+            self.stdout.write(f"❌ Chemin invalide : {root_path}")
+            return
+
+        self.stdout.write(f"✅ Début de l'import depuis : {root_path}")
+
+        # Comptage des fichiers pour la progression
+        total_files = 0
+        for _root, _dirs, files in os.walk(root_path):
+            total_files += len(files)
+        self.stdout.write(f"📄 Fichiers détectés : {total_files}")
+
+        processed = 0
+        imported = 0
+        errors = 0
+        skipped = 0
+
+        for root, dirs, files in os.walk(root_path):
+
+            # nom de dossier (ex: inbox, sent, discussion_threads, etc.)
+            folder_name = os.path.basename(root) or "root"
+            folder, _ = Folder.objects.get_or_create(name=folder_name)
+
+            for file in files:
+                processed += 1
+                filepath = os.path.join(root, file)
+
+                try:
+                    with open(filepath, "rb") as f:
+                        msg = email.message_from_binary_file(f)
+
+                    # --------- Métadonnées principales ---------
+                    message_id = msg.get("Message-ID", file)
+                    subject = msg.get("Subject", "") or ""
+                    date_str = msg.get("Date")
+
+                    try:
+                        date = parsedate_to_datetime(date_str) if date_str else None
+                    except Exception:
+                        date = None
+
+                    from_header = msg.get("From")
+
+                    to_addrs = self.parse_addresses(msg.get("To"))
+                    cc_addrs = self.parse_addresses(msg.get("Cc"))
+                    bcc_addrs = self.parse_addresses(msg.get("Bcc"))
+
+                    in_reply_to = msg.get("In-Reply-To")
+
+                    body = self.extract_body(msg)
+
+                    # --------- Expéditeur ---------
+                    sender_email = self.parse_addresses(from_header)
+                    sender = None
+                    if sender_email:
+                        sender = self.get_or_create_employee(sender_email[0])
+
+                    # si pas d'expéditeur valide, on ignore le mail
+                    if not sender:
+                        skipped += 1
+                        continue
+
+                    # --------- Création / récupération de l'Email ---------
+                    email_obj, created = Email.objects.get_or_create(
+                        message_id=message_id,
+                        defaults={
+                            "subject": subject,
+                            "body": body,
+                            "date": date,
+                            "from_employee": sender,
+                            "folder": folder,
+                        },
+                    )
+
+                    if created:
+                        imported += 1
+
+                    # --------- Destinataires ---------
+                    for addr in to_addrs:
+                        emp = self.get_or_create_employee(addr)
+                        if emp:
+                            email_obj.to_employees.add(emp)
+
+                    for addr in cc_addrs:
+                        emp = self.get_or_create_employee(addr)
+                        if emp:
+                            email_obj.cc_employees.add(emp)
+
+                    for addr in bcc_addrs:
+                        emp = self.get_or_create_employee(addr)
+                        if emp:
+                            email_obj.bcc_employees.add(emp)
+
+                    # --------- Thread (In-Reply-To) ---------
+                    if in_reply_to:
+                        try:
+                            parent = Email.objects.get(message_id=in_reply_to)
+                            email_obj.in_reply_to = parent
+                            email_obj.save(update_fields=["in_reply_to"])
+                        except Email.DoesNotExist:
+                            # parent pas encore importé : on ignore silencieusement
+                            pass
+
+                    # --------- Pièces jointes ---------
+                    for part in msg.walk():
+                        if part.get_content_disposition() == "attachment":
+                            filename = part.get_filename()
+                            if filename:
+                                payload = part.get_payload(decode=True) or b""
+                                Attachment.objects.create(
+                                    email=email_obj,
+                                    filename=filename,
+                                    content_type=part.get_content_type() or "",
+                                    size=len(payload),
+                                )
+
+                    # --------- Mise à jour du champ de recherche plein texte ---------
+                    try:
+                        Email.objects.filter(id=email_obj.id).update(
+                            search_vector=SearchVector("subject", "body")
+                        )
+                    except Exception as e:
+                        errors += 1
+                        self.stdout.write(
+                            f"⚠️ Erreur FTS (email importé sans index FTS) : "
+                            f"{filepath} → {e}"
+                        )
+
+                except Exception as e:
+                    errors += 1
+                    self.stdout.write(f"⚠️ Erreur : {filepath} → {e}")
+
+                # log de progression périodique
+                if processed % 10000 == 0:
+                    self.stdout.write(
+                        f"Progression : {processed}/{total_files} fichiers, "
+                        f"{imported} importés, {skipped} ignorés, {errors} erreurs"
+                    )
+
+        # Résumé final
+        self.stdout.write(
+            f"Résumé : {processed} fichiers traités, "
+            f"{imported} emails importés, {skipped} ignorés, {errors} erreurs."
+        )
+        self.stdout.write("✅ Import terminé.")
