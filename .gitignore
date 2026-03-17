@@ -8,14 +8,14 @@ media/
 
 .env
 venv/
-
-.vscode/
-.DS_Storedata/emails.csv
-data/emails.csv
 .venv/
 env/
 
-# ajouter tout les fichiers provenant de .tex(ex: .aux, .log, .out, .toc)
+.vscode/
+.DS_Store
+data/emails.csv
+
+# fichiers LaTeX temporaires
 *.aux
 *.log
 *.out
@@ -25,4 +25,5 @@ env/
 *.fls
 *.blg
 *.bbl
-*.pdf  
+*.pdf
+*.ipynb_checkpoints
