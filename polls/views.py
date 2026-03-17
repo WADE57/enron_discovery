@@ -1,30 +1,6 @@
-# from django.shortcuts import render
-# from django.core.paginator import Paginator
-# from .models import Email, Employee
-
-# def email_list(request):
-#     # Récupère tous les emails triés par date
-#     emails_list = Email.objects.all().select_related('from_employee').order_by('-date')
-    
-#     # Pagination : 20 emails par page
-#     paginator = Paginator(emails_list, 20)
-#     page_number = request.GET.get('page')
-#     emails = paginator.get_page(page_number)
-    
-#     # Statistiques
-#     stats = {
-#         'total_emails': Email.objects.count(),
-#         'total_employees': Employee.objects.count(),
-#     }
-    
-#     return render(request, 'email_list.html', {
-#         'emails': emails,
-#         'stats': stats
-#     })
-
 from django.shortcuts import render, get_object_or_404
 from django.core.paginator import Paginator
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.db.models.functions import TruncMonth
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from .models import Email, Employee
@@ -118,3 +94,27 @@ def thread_detail(request, email_id):
         "conversation": conversation,
     }
     return render(request, "thread_detail.html", context)
+
+
+def influence_graph(request):
+    user_email = request.GET.get("user", "").strip()
+
+    connections = (
+        Email.objects.exclude(to_employees__isnull=True)
+        .values("from_employee__email", "to_employees__email")
+        .annotate(total=Count("id"))
+    )
+
+    if user_email:
+        connections = connections.filter(
+            Q(from_employee__email__icontains=user_email)
+            | Q(to_employees__email__icontains=user_email)
+        )
+
+    connections = connections.order_by("-total")[:100]
+
+    context = {
+        "connections": connections,
+        "user_email": user_email,
+    }
+    return render(request, "influence.html", context)
