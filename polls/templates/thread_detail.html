@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Explorateur de thread</title>
+</head>
+
+<body>
+    <h1>Explorateur de thread</h1>
+
+    <p>
+        <a href="/dashboard/">Dashboard</a> |
+        <a href="/search/">Recherche</a>
+    </p>
+
+    <h2>Mail selectionne</h2>
+    <p><strong>ID:</strong> {{ selected.id }}</p>
+    <p><strong>Date:</strong> {{ selected.date|date:"Y-m-d H:i" }}</p>
+    <p><strong>From:</strong> {{ selected.from_employee.email }}</p>
+    <p><strong>Subject:</strong> {{ selected.subject|default:"(sans sujet)" }}</p>
+
+    <h2>Conversation chronologique (racine + reponses)</h2>
+    <p><strong>Racine du thread:</strong> {{ root.subject|default:"(sans sujet)" }}</p>
+
+    <table border="1" cellpadding="6" cellspacing="0">
+        <tr>
+            <th>Date</th>
+            <th>Expediteur</th>
+            <th>Sujet</th>
+            <th>Extrait</th>
+        </tr>
+        {% for email in conversation %}
+        <tr {% if email.id == selected.id %}style="background: #f2f2f2;" {% endif %}>
+            <td>{{ email.date|date:"Y-m-d H:i" }}</td>
+            <td>{{ email.from_employee.email }}</td>
+            <td>{{ email.subject|default:"(sans sujet)"|truncatechars:100 }}</td>
+            <td>{{ email.body|default:""|truncatechars:140 }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">Aucun message dans ce thread</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+
+</html>

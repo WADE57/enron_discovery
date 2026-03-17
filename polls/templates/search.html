@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Recherche Enron</title>
+</head>
+
+<body>
+    <h1>Recherche avancee</h1>
+
+    <p>
+        <a href="/dashboard/">Dashboard</a>
+    </p>
+
+    <form method="get" action="">
+        <label>Mot-cle:
+            <input type="text" name="q" value="{{ q }}" placeholder="ex: contract gas" />
+        </label>
+        <label>Expediteur:
+            <input type="text" name="sender" value="{{ sender }}" placeholder="ex: kay.mann@enron.com" />
+        </label>
+        <label>Date debut:
+            <input type="date" name="date_from" value="{{ date_from }}" />
+        </label>
+        <label>Date fin:
+            <input type="date" name="date_to" value="{{ date_to }}" />
+        </label>
+        <button type="submit">Rechercher</button>
+    </form>
+
+    <p>Total resultats: {{ total_results }}</p>
+
+    <table border="1" cellpadding="6" cellspacing="0">
+        <tr>
+            <th>Date</th>
+            <th>Expediteur</th>
+            <th>Sujet</th>
+            <th>Thread</th>
+        </tr>
+        {% for email in page_obj %}
+        <tr>
+            <td>{{ email.date|date:"Y-m-d H:i" }}</td>
+            <td>{{ email.from_employee.email }}</td>
+            <td>{{ email.subject|default:"(sans sujet)"|truncatechars:120 }}</td>
+            <td><a href="/threads/{{ email.id }}/">Voir</a></td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">Aucun resultat</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <div style="margin-top: 12px;">
+        {% if page_obj.has_previous %}
+        <a
+            href="?q={{ q }}&sender={{ sender }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ page_obj.previous_page_number }}">Precedent</a>
+        {% endif %}
+
+        <span>Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+
+        {% if page_obj.has_next %}
+        <a
+            href="?q={{ q }}&sender={{ sender }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ page_obj.next_page_number }}">Suivant</a>
+        {% endif %}
+    </div>
+</body>
+
+</html>
