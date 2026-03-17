@@ -11,4 +11,6 @@ from . import views
 urlpatterns = [
     path("", views.dashboard, name="home"),
     path("dashboard/", views.dashboard, name="dashboard"),
+    path("search/", views.search_emails, name="search_emails"),
+    path("threads/<int:email_id>/", views.thread_detail, name="thread_detail"),
 ]
