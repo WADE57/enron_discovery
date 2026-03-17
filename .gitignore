@@ -14,3 +14,15 @@ venv/
 data/emails.csv
 .venv/
 env/
+
+# ajouter tout les fichiers provenant de .tex(ex: .aux, .log, .out, .toc)
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+*.blg
+*.bbl
+*.pdf  
