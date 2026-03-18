@@ -17,10 +17,11 @@ https://www.cs.cmu.edu/~enron/
 ## 2. Stack technique
 
 - Backend et interface: Django
-- Base de donnees: PostgreSQL
+- Base de donnees: PostgreSQL 16
 - Recherche plein texte: PostgreSQL FTS (GIN index)
 - Parsing/ingestion: Python (`email`, `re`, `datetime`)
-- Conteneurisation DB: Docker Compose
+- Environnement Python: `venv`
+- Base de donnees en conteneur: Docker Compose (`db`)
 - Versionnage: Git
 
 ## 3. Architecture du projet
@@ -121,38 +122,51 @@ Fonctionnalites:
 ## 6. Installation et execution
 
 ### Prerequis
-- Python 3.12+
-- Docker + Docker Compose
 
-### Lancer la base de donnees
+- Python 3.12+
+- `venv`
+- Docker + Docker Compose (utilises uniquement pour PostgreSQL)
+
+### 1) Creer et activer l'environnement virtuel
 
 ```bash
-docker-compose up -d
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
-### Appliquer les migrations
+### 2) Demarrer PostgreSQL (Docker)
+
+```bash
+docker compose up -d
+docker compose ps
+```
+
+### 3) Appliquer les migrations Django
 
 ```bash
 python manage.py makemigrations
 python manage.py migrate
 ```
 
-### Importer les emails
+### 4) Importer les emails
 
 ```bash
 python manage.py import_enron --path /chemin/vers/maildir
 ```
 
-### Lancer le serveur
+### 5) Lancer le serveur
 
 ```bash
 python manage.py runserver
 ```
 
-Configuration PostgreSQL (`docker-compose.yml`):
+Configuration PostgreSQL (`docker-compose.yml` + `settings.py`) :
 - DB: `enron_db`
 - User: `enron`
 - Password: `enron2026`
+- Host: `127.0.0.1`
 - Port hote: `5433`
 
 ## 7. URLs principales
