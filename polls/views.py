@@ -17,16 +17,16 @@ def dashboard(request):
         "total_employees": total_employees,
         "top_senders": top_senders,
     }
-    return render(request, 'polls/dashboard.html', context)
+    return render(request, "dashboard.html", context)
 
 def home(request):
-    return render(request, 'polls/home.html')
+    return render(request, "home.html")
 
 def conversations(request):
-    return render(request, 'polls/conversations.html')
+    return render(request, "conversation.html")
 
 def expediteurs(request):
-    return render(request, 'polls/expediteurs.html')
+    return render(request, "expediteur.html")
 
 def stats(request):
     total_emails = Email.objects.count()
@@ -41,7 +41,7 @@ def stats(request):
         "total_employees": total_employees,
         "top_senders": top_senders,
     }
-    return render(request, 'polls/stats.html', context)
+    return render(request, "stats.html", context)
 
 def search_emails(request):
     q = request.GET.get("q", "").strip()
@@ -71,7 +71,7 @@ def search_emails(request):
         "date_to": date_to,
         "total_results": qs.count(),
     }
-    return render(request, "polls/search.html", context)
+    return render(request, "search.html", context)
 
 def influence_graph(request):
     user_email = request.GET.get("user", "").strip()
@@ -90,7 +90,7 @@ def influence_graph(request):
         "connections": connections,
         "user_email": user_email,
     }
-    return render(request, "polls/influence.html", context)
+    return render(request, "influence.html", context)
 
 def thread_detail(request, email_id):
     selected = get_object_or_404(Email.objects.select_related("from_employee"), id=email_id)
@@ -110,4 +110,4 @@ def thread_detail(request, email_id):
         "root": root,
         "conversation": conversation,
     }
-    return render(request, "polls/thread_detail.html", context)
+    return render(request, "thread_detail.html", context)
