@@ -56,10 +56,11 @@ ROOT_URLCONF = 'enron_discovery.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
+        'DIRS': [],  # tu peux ajouter un chemin si besoin
+        'APP_DIRS': True,  # doit être True pour chercher dans app/templates/
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -67,7 +68,6 @@ TEMPLATES = [
         },
     },
 ]
-
 WSGI_APPLICATION = 'enron_discovery.wsgi.application'
 
 

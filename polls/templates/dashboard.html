@@ -1,120 +1,77 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enron Discovery</title>
+{% extends "base.html" %}
+{% block title %}Dashboard - Enron Discovery{% endblock %}
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">📊 Tableau de bord</h1>
 
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-
-    <style>
-        body {
-            font-family: 'Roboto', sans-serif;
-            background: linear-gradient(135deg, #007BFF, #FFC107); /* bleu -> jaune */
-            color: #fff;
-            min-height: 100vh;
-        }
-        .welcome-section {
-            padding: 60px 20px;
-            text-align: center;
-        }
-        .welcome-section h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-        .welcome-section p {
-            font-size: 1.2rem;
-            margin-bottom: 40px;
-        }
-        .card-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 20px;
-        }
-        .card {
-            border-radius: 15px;
-            background-color: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            width: 220px;
-            padding: 25px;
-            text-align: center;
-            transition: transform 0.3s, background-color 0.3s;
-            color: #fff;
-        }
-        .card:hover {
-            transform: translateY(-5px) scale(1.05);
-            background-color: rgba(255, 255, 255, 0.25);
-        }
-        .card h4 {
-            margin-bottom: 15px;
-        }
-        .btn-card {
-            margin-top: 10px;
-        }
-        .card i {
-            font-size: 2rem;
-            margin-bottom: 10px;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="welcome-section">
-        <h1>Bienvenue sur Enron Discovery</h1>
-        <p>Explorez, analysez et découvrez les échanges d’emails Enron facilement</p>
-
-        <div class="card-container">
-
-            <!-- Recherche -->
-            <div class="card">
-                <i class="bi bi-search"></i>
-                <h4>Recherche Avancée</h4>
-                <p>Trouver des emails par mots-clés, expéditeur ou date</p>
-                <a href="{% url 'search_emails' %}" class="btn btn-light btn-card">Rechercher</a>
+    <!-- Cartes de résumé -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center p-3 border-0 shadow-sm">
+                <h5>Total Emails</h5>
+                <h3 class="text-primary">{{ total_emails }}</h3>
             </div>
-
-            <!-- Conversations -->
-            <div class="card">
-                <i class="bi bi-chat-dots"></i>
-                <h4>Explorer les Threads</h4>
-                <p>Voir les emails et leurs réponses chronologiques</p>
-                <a href="{% url 'conversations' %}" class="btn btn-light btn-card">Explorer</a>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center p-3 border-0 shadow-sm">
+                <h5>Total Employés</h5>
+                <h3 class="text-success">{{ total_employees }}</h3>
             </div>
-
-            <!-- Statistiques -->
-            <div class="card">
-                <i class="bi bi-bar-chart-line"></i>
-                <h4>Dashboard</h4>
-                <p>Statistiques globales et top expéditeurs</p>
-                <a href="{% url 'stats' %}" class="btn btn-light btn-card">Accéder</a>
-            </div>
-
-            <!-- Graphe d’influence -->
-            <div class="card">
-                <i class="bi bi-graph-up-arrow"></i>
-                <h4>Graphe d’Influence</h4>
-                <p>Analyse des connexions entre collaborateurs</p>
-                <a href="{% url 'influence' %}" class="btn btn-light btn-card">Explorer</a>
-            </div>
-
-            <!-- Expéditeurs -->
-            <div class="card">
-                <i class="bi bi-people"></i>
-                <h4>Expéditeurs</h4>
-                <p>Voir les expéditeurs actifs</p>
-                <a href="{% url 'expediteurs' %}" class="btn btn-light btn-card">Accéder</a>
-            </div>
-
         </div>
     </div>
-</body>
-</html>
+
+    <div class="row">
+        <!-- Graphique des emails par mois -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">Emails par mois</div>
+                <div class="card-body">
+                    <canvas id="emailsPerMonth" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+        <!-- Top expéditeurs -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">Top 10 expéditeurs</div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        {% for sender in top_senders %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ sender.from_employee__email|default:"Inconnu" }}
+                                <span class="badge bg-primary rounded-pill">{{ sender.total }}</span>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item">Aucun expéditeur trouvé.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('emailsPerMonth').getContext('2d');
+    const emailsPerMonth = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [{% for m in emails_per_month %}'{{ m.month|date:"M Y" }}',{% endfor %}],
+            datasets: [{
+                label: 'Emails par mois',
+                data: [{% for m in emails_per_month %}{{ m.total }},{% endfor %}],
+                backgroundColor: 'rgba(78, 115, 223, 0.2)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+</script>
+{% endblock %}

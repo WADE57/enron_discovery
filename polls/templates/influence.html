@@ -1,46 +1,46 @@
-<!doctype html>
-<html>
+{% extends "base.html" %}
+{% block title %}Graphe d'influence - Enron Discovery{% endblock %}
 
-<head>
-    <meta charset="utf-8">
-    <title>Graphe d'influence</title>
-</head>
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">🌐 Graphe d'influence</h1>
 
-<body>
-    <h1>Graphe d'influence</h1>
-
-    <p>
-        <a href="/dashboard/">Dashboard</a> |
-        <a href="/search/">Recherche</a>
-    </p>
-
-    <form method="get" action="">
-        <label>Utilisateur (optionnel):
-            <input type="text" name="user" value="{{ user_email }}" placeholder="ex: kay.mann@enron.com" />
-        </label>
-        <button type="submit">Filtrer</button>
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-6">
+            <input type="text" name="user" class="form-control" placeholder="Adresse email d'un employé" value="{{ user_email }}">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary">Filtrer</button>
+        </div>
     </form>
 
-    <p>Top connexions expediteur -> destinataire (champ To)</p>
+    <p class="text-muted">Connexions les plus fréquentes (max 100) :
+        {% if user_email %}pour <strong>{{ user_email }}</strong>{% endif %}
+    </p>
 
-    <table border="1" cellpadding="6" cellspacing="0">
-        <tr>
-            <th>Expediteur</th>
-            <th>Destinataire</th>
-            <th>Frequence</th>
-        </tr>
-        {% for row in connections %}
-        <tr>
-            <td>{{ row.from_employee__email }}</td>
-            <td>{{ row.to_employees__email }}</td>
-            <td>{{ row.total }}</td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="3">Aucune connexion trouvee</td>
-        </tr>
-        {% endfor %}
-    </table>
-</body>
-
-</html>
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Expéditeur</th>
+                    <th>Destinataire</th>
+                    <th>Nombre d'échanges</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for conn in connections %}
+                    <tr>
+                        <td>{{ conn.from_employee__email }}</td>
+                        <td>{{ conn.to_employees__email }}</td>
+                        <td><span class="badge bg-primary rounded-pill">{{ conn.total }}</span></td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center">Aucune connexion trouvée.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

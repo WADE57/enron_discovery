@@ -1,48 +1,44 @@
-<!doctype html>
-<html>
+{% extends "base.html" %}
+{% block title %}Détail du thread - Enron Discovery{% endblock %}
 
-<head>
-    <meta charset="utf-8">
-    <title>Explorateur de thread</title>
-</head>
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'enron:home' %}">Accueil</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'enron:search_emails' %}">Recherche</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Thread</li>
+        </ol>
+    </nav>
 
-<body>
-    <h1>Explorateur de thread</h1>
+    <div class="card mb-4">
+        <div class="card-header bg-white">
+            <h3 class="mb-0">{{ selected.subject|default:"(Sans sujet)" }}</h3>
+        </div>
+        <div class="card-body">
+            <p><strong>De :</strong> {{ selected.from_employee.email|default:"Inconnu" }}</p>
+            <p><strong>Date :</strong> {{ selected.date|date:"d M Y H:i"|default:"Inconnue" }}</p>
+            <p><strong>Destinataires :</strong> {{ selected.to_employees.all|join:", "|default:"Aucun" }}</p>
+            <hr>
+            <p><strong>Corps du message :</strong></p>
+            <div class="border p-3 bg-light" style="white-space: pre-wrap;">{{ selected.body|default:"(Corps vide)" }}</div>
+        </div>
+    </div>
 
-    <p>
-        <a href="/dashboard/">Dashboard</a> |
-        <a href="/search/">Recherche</a>
-    </p>
-
-    <h2>Mail selectionne</h2>
-    <p><strong>ID:</strong> {{ selected.id }}</p>
-    <p><strong>Date:</strong> {{ selected.date|date:"Y-m-d H:i" }}</p>
-    <p><strong>From:</strong> {{ selected.from_employee.email }}</p>
-    <p><strong>Subject:</strong> {{ selected.subject|default:"(sans sujet)" }}</p>
-
-    <h2>Conversation chronologique (racine + reponses)</h2>
-    <p><strong>Racine du thread:</strong> {{ root.subject|default:"(sans sujet)" }}</p>
-
-    <table border="1" cellpadding="6" cellspacing="0">
-        <tr>
-            <th>Date</th>
-            <th>Expediteur</th>
-            <th>Sujet</th>
-            <th>Extrait</th>
-        </tr>
+    <h4 class="mb-3">Conversation complète</h4>
+    <div class="list-group">
         {% for email in conversation %}
-        <tr {% if email.id == selected.id %}style="background: #f2f2f2;" {% endif %}>
-            <td>{{ email.date|date:"Y-m-d H:i" }}</td>
-            <td>{{ email.from_employee.email }}</td>
-            <td>{{ email.subject|default:"(sans sujet)"|truncatechars:100 }}</td>
-            <td>{{ email.body|default:""|truncatechars:140 }}</td>
-        </tr>
+            <div class="list-group-item {% if email.id == selected.id %}list-group-item-primary{% endif %}">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">{{ email.subject|default:"(Sans sujet)" }}</h6>
+                    <small>{{ email.date|date:"d M Y H:i"|default:"Date inconnue" }}</small>
+                </div>
+                <p class="mb-1"><strong>{{ email.from_employee.email|default:"Inconnu" }}</strong></p>
+                <p class="mb-1 text-truncate">{{ email.body|default:""|truncatechars:150 }}</p>
+            </div>
         {% empty %}
-        <tr>
-            <td colspan="4">Aucun message dans ce thread</td>
-        </tr>
+            <div class="alert alert-warning">Aucun message dans ce thread.</div>
         {% endfor %}
-    </table>
-</body>
-
-</html>
+    </div>
+</div>
+{% endblock %}
