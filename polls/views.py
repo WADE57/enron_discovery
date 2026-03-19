@@ -48,8 +48,6 @@ def dashboard(request):
         "top_senders": top_senders,
     }
     return render(request, "dashboard.html", context)
-<<<<<<< HEAD
-=======
 
 def home(request):
     return render(request, "home.html")
@@ -74,7 +72,6 @@ def stats(request):
         "top_senders": top_senders,
     }
     return render(request, "stats.html", context)
->>>>>>> 2709479911b1ba492ac305d2c36c1d75ba4a1840
 
 # --- Recherche avancée (FTS PostgreSQL) ---
 def search_emails(request):
@@ -175,12 +172,9 @@ def email_list(request):
         "total_emails": Email.objects.count(),
         "total_employees": Employee.objects.count(),
     }
-<<<<<<< HEAD
     context = {
         "emails": emails,
         "stats": stats,
     }
     return render(request, "email_list.html", context)
-=======
-    return render(request, "thread_detail.html", context)
->>>>>>> 2709479911b1ba492ac305d2c36c1d75ba4a1840
+    
