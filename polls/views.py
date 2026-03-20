@@ -35,6 +35,14 @@ def dashboard(request):
         .order_by("month")
     )
 
+    # Prepare chart-ready data so the template JS stays valid.
+    monthly_rows = list(emails_per_month)
+    chart_labels = [
+        row["month"].strftime("%b %Y") if row.get("month") else ""
+        for row in monthly_rows
+    ]
+    chart_values = [row["total"] for row in monthly_rows]
+
     top_senders = (
         Email.objects.values("from_employee__email")
         .annotate(total=Count("id"))
@@ -45,6 +53,8 @@ def dashboard(request):
         "total_emails": total_emails,
         "total_employees": total_employees,
         "emails_per_month": emails_per_month,
+        "chart_labels": chart_labels,
+        "chart_values": chart_values,
         "top_senders": top_senders,
     }
     return render(request, "dashboard.html", context)
