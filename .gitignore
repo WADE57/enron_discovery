@@ -1,3 +1,4 @@
+# Fichiers à ignorer pour le projet Enron Discovery
 maildir/
 *.tar.gz
 __pycache__/
