@@ -48,33 +48,6 @@ def dashboard(request):
         "top_senders": top_senders,
     }
     return render(request, "dashboard.html", context)
-<<<<<<< HEAD
-=======
-
-def home(request):
-    return render(request, "home.html")
-
-def conversations(request):
-    return render(request, "conversation.html")
-
-def expediteurs(request):
-    return render(request, "expediteur.html")
-
-def stats(request):
-    total_emails = Email.objects.count()
-    total_employees = Employee.objects.count()
-    top_senders = (
-        Email.objects.values("from_employee__email")
-        .annotate(total=Count("id"))
-        .order_by("-total")[:5]
-    )
-    context = {
-        "total_emails": total_emails,
-        "total_employees": total_employees,
-        "top_senders": top_senders,
-    }
-    return render(request, "stats.html", context)
->>>>>>> 2709479911b1ba492ac305d2c36c1d75ba4a1840
 
 # --- Recherche avancée (FTS PostgreSQL) ---
 def search_emails(request):
@@ -143,7 +116,7 @@ def thread_detail(request, email_id):
     }
     return render(request, "thread_detail.html", context)
 
-# --- Graphe d'influence (optionnel mais demandé) ---
+# --- Graphe d'influence ---
 def influence_graph(request):
     user_email = request.GET.get("user", "").strip()
     connections = (
@@ -164,7 +137,7 @@ def influence_graph(request):
     }
     return render(request, "influence.html", context)
 
-# --- (Optionnel) Liste simple de tous les emails ---
+# --- Liste simple de tous les emails ---
 def email_list(request):
     emails_list = Email.objects.select_related("from_employee").all().order_by("-date")
     paginator = Paginator(emails_list, 50)
@@ -175,12 +148,8 @@ def email_list(request):
         "total_emails": Email.objects.count(),
         "total_employees": Employee.objects.count(),
     }
-<<<<<<< HEAD
     context = {
         "emails": emails,
         "stats": stats,
     }
     return render(request, "email_list.html", context)
-=======
-    return render(request, "thread_detail.html", context)
->>>>>>> 2709479911b1ba492ac305d2c36c1d75ba4a1840
