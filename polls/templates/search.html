@@ -1,70 +1,70 @@
-<!doctype html>
-<html>
+{% extends "base.html" %}
+{% block title %}Recherche avancée - Enron Discovery{% endblock %}
 
-<head>
-    <meta charset="utf-8">
-    <title>Recherche Enron</title>
-</head>
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">🔍 Recherche avancée</h1>
 
-<body>
-    <h1>Recherche avancee</h1>
-
-    <p>
-        <a href="/dashboard/">Dashboard</a>
-    </p>
-
-    <form method="get" action="">
-        <label>Mot-cle:
-            <input type="text" name="q" value="{{ q }}" placeholder="ex: contract gas" />
-        </label>
-        <label>Expediteur:
-            <input type="text" name="sender" value="{{ sender }}" placeholder="ex: kay.mann@enron.com" />
-        </label>
-        <label>Date debut:
-            <input type="date" name="date_from" value="{{ date_from }}" />
-        </label>
-        <label>Date fin:
-            <input type="date" name="date_to" value="{{ date_to }}" />
-        </label>
-        <button type="submit">Rechercher</button>
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-4">
+            <input type="text" name="q" class="form-control" placeholder="Mot-clé" value="{{ q }}">
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="sender" class="form-control" placeholder="Expéditeur" value="{{ sender }}">
+        </div>
+        <div class="col-md-2">
+            <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+        </div>
+        <div class="col-md-2">
+            <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-primary w-100">Rechercher</button>
+        </div>
     </form>
 
-    <p>Total resultats: {{ total_results }}</p>
+    <p class="text-muted">{{ total_results }} résultat(s) trouvé(s)</p>
 
-    <table border="1" cellpadding="6" cellspacing="0">
-        <tr>
-            <th>Date</th>
-            <th>Expediteur</th>
-            <th>Sujet</th>
-            <th>Thread</th>
-        </tr>
+    <div class="list-group">
         {% for email in page_obj %}
-        <tr>
-            <td>{{ email.date|date:"Y-m-d H:i" }}</td>
-            <td>{{ email.from_employee.email }}</td>
-            <td>{{ email.subject|default:"(sans sujet)"|truncatechars:120 }}</td>
-            <td><a href="/threads/{{ email.id }}/">Voir</a></td>
-        </tr>
+            <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-start">
+                <div class="ms-2 me-auto">
+                    <div class="fw-bold">{{ email.subject|default:"(Sans sujet)" }}</div>
+                    <small class="text-muted">
+                        De : {{ email.from_employee.email|default:"Inconnu" }} |
+                        Date : {{ email.date|date:"d M Y H:i"|default:"Inconnue" }}
+                    </small>
+                </div>
+                <a href="{% url 'enron:thread_detail' email.id %}" class="btn btn-sm btn-outline-primary">Voir le thread</a>
+            </div>
         {% empty %}
-        <tr>
-            <td colspan="4">Aucun resultat</td>
-        </tr>
+            <div class="alert alert-info">Aucun email trouvé.</div>
         {% endfor %}
-    </table>
-
-    <div style="margin-top: 12px;">
-        {% if page_obj.has_previous %}
-        <a
-            href="?q={{ q }}&sender={{ sender }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ page_obj.previous_page_number }}">Precedent</a>
-        {% endif %}
-
-        <span>Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
-
-        {% if page_obj.has_next %}
-        <a
-            href="?q={{ q }}&sender={{ sender }}&date_from={{ date_from }}&date_to={{ date_to }}&page={{ page_obj.next_page_number }}">Suivant</a>
-        {% endif %}
     </div>
-</body>
 
-</html>
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+        <nav aria-label="Pagination" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ q }}&sender={{ sender }}&date_from={{ date_from }}&date_to={{ date_to }}">Précédent</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">Précédent</span></li>
+                {% endif %}
+
+                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ q }}&sender={{ sender }}&date_from={{ date_from }}&date_to={{ date_to }}">Suivant</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">Suivant</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+{% endblock %}

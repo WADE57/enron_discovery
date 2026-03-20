@@ -1,56 +1,81 @@
-<!doctype html>
-<html>
+{% extends "base.html" %}
+{% block title %}Dashboard - Enron Discovery{% endblock %}
 
-<head>
-  <meta charset="utf-8">
-  <title>Dashboard</title>
-</head>
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">📊 Tableau de bord</h1>
 
-<body>
-  <h1>Dashboard Enron</h1>
-  <p>
-    <a href="/search/">Recherche avancee</a>
-    |
-    <a href="/influence/">Graphe d'influence</a>
-  </p>
-  <p>Total emails: {{ total_emails }}</p>
-  <p>Total employes: {{ total_employees }}</p>
+    <!-- Cartes de résumé -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center p-3 border-0 shadow-sm">
+                <h5>Total Emails</h5>
+                <h3 class="text-primary">{{ total_emails }}</h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center p-3 border-0 shadow-sm">
+                <h5>Total Employés</h5>
+                <h3 class="text-success">{{ total_employees }}</h3>
+            </div>
+        </div>
+    </div>
 
-  <h2>Volume de mails par mois</h2>
-  <table border="1" cellpadding="6">
-    <tr>
-      <th>Mois</th>
-      <th>Total</th>
-    </tr>
-    {% for row in emails_per_month %}
-    <tr>
-      <td>{{ row.month|date:"Y-m" }}</td>
-      <td>{{ row.total }}</td>
-    </tr>
-    {% empty %}
-    <tr>
-      <td colspan="2">Aucune donnee</td>
-    </tr>
-    {% endfor %}
-  </table>
+    <div class="row">
+        <!-- Graphique des emails par mois -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">Emails par mois</div>
+                <div class="card-body">
+                    <canvas id="emailsPerMonth" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+        <!-- Top expéditeurs -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">Top 10 expéditeurs</div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        {% for sender in top_senders %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ sender.from_employee__email|default:"Inconnu" }}
+                            <span class="badge bg-primary rounded-pill">{{ sender.total }}</span>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item">Aucun expéditeur trouvé.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
-  <h2>Top 10 expediteurs</h2>
-  <table border="1" cellpadding="6">
-    <tr>
-      <th>Email</th>
-      <th>Nb mails</th>
-    </tr>
-    {% for row in top_senders %}
-    <tr>
-      <td>{{ row.from_employee__email }}</td>
-      <td>{{ row.total }}</td>
-    </tr>
-    {% empty %}
-    <tr>
-      <td colspan="2">Aucune donnee</td>
-    </tr>
-    {% endfor %}
-  </table>
-</body>
-
-</html>
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{ chart_labels|json_script:"chart-labels" }}
+{{ chart_values|json_script:"chart-values" }}
+<script>
+    const chartLabels = JSON.parse(document.getElementById('chart-labels').textContent);
+    const chartValues = JSON.parse(document.getElementById('chart-values').textContent);
+    const ctx = document.getElementById('emailsPerMonth').getContext('2d');
+    const emailsPerMonth = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                label: 'Emails par mois',
+                data: chartValues,
+                backgroundColor: 'rgba(78, 115, 223, 0.2)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+</script>
+{% endblock %}

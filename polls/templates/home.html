@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Accueil - Enron Discovery{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #4e73df, #1cc88a);
+        color: #fff;
+    }
+    .card-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+        margin: 40px 0;
+    }
+    .card-custom {
+        border-radius: 15px;
+        background-color: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        width: 220px;
+        padding: 25px;
+        text-align: center;
+        transition: transform 0.3s, background-color 0.3s;
+        color: #fff;
+    }
+    .card-custom:hover {
+        transform: translateY(-5px) scale(1.05);
+        background-color: rgba(255, 255, 255, 0.25);
+    }
+    .card-custom h4 {
+        margin-bottom: 15px;
+    }
+    .card-custom i {
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+    .stats-custom {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        margin-top: 40px;
+        font-size: 1.5rem;
+    }
+    .top-senders-custom {
+        margin-top: 30px;
+        text-align: left;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+        background: rgba(255,255,255,0.1);
+        padding: 20px;
+        border-radius: 10px;
+        backdrop-filter: blur(5px);
+    }
+    .top-senders-custom h5 {
+        color: #fff;
+    }
+    .top-senders-custom ul {
+        list-style: none;
+        padding: 0;
+    }
+    .top-senders-custom li {
+        margin-bottom: 8px;
+    }
+    .btn-light {
+        background-color: white;
+        color: #333;
+        border: none;
+    }
+    .btn-light:hover {
+        background-color: #f0f0f0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-4 fw-bold">Bienvenue sur Enron Discovery</h1>
+    <p class="lead">Explorez, analysez et découvrez les échanges d’emails Enron facilement</p>
+
+    <div class="card-container">
+        <div class="card-custom">
+            <i class="bi bi-search"></i>
+            <h4>Recherche Avancée</h4>
+            <p>Trouver des emails par mots-clés, expéditeur ou date</p>
+            <a href="{% url 'enron:search_emails' %}" class="btn btn-light">Rechercher</a>
+        </div>
+        <div class="card-custom">
+            <i class="bi bi-bar-chart-line"></i>
+            <h4>Dashboard</h4>
+            <p>Statistiques globales et top expéditeurs</p>
+            <a href="{% url 'enron:dashboard' %}" class="btn btn-light">Accéder</a>
+        </div>
+        <div class="card-custom">
+            <i class="bi bi-graph-up-arrow"></i>
+            <h4>Graphe d’Influence</h4>
+            <p>Analyse des connexions entre collaborateurs</p>
+            <a href="{% url 'enron:influence_graph' %}" class="btn btn-light">Explorer</a>
+        </div>
+    </div>
+
+    <div class="stats-custom">
+        <div>
+            <i class="bi bi-envelope-fill"></i> <strong>{{ total_emails }}</strong> Emails
+        </div>
+        <div>
+            <i class="bi bi-people-fill"></i> <strong>{{ total_employees }}</strong> Employés
+        </div>
+    </div>
+
+    <div class="top-senders-custom">
+        <h5>Top Expéditeurs :</h5>
+        <ul>
+            {% for sender in top_senders %}
+                <li>{{ sender.from_employee__email|default:"Inconnu" }} — {{ sender.total }} emails</li>
+            {% empty %}
+                <li>Aucune donnée disponible.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
