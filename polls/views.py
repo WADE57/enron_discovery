@@ -35,6 +35,14 @@ def dashboard(request):
         .order_by("month")
     )
 
+    # Prepare chart-ready data so the template JS stays valid.
+    monthly_rows = list(emails_per_month)
+    chart_labels = [
+        row["month"].strftime("%b %Y") if row.get("month") else ""
+        for row in monthly_rows
+    ]
+    chart_values = [row["total"] for row in monthly_rows]
+
     top_senders = (
         Email.objects.values("from_employee__email")
         .annotate(total=Count("id"))
@@ -45,9 +53,35 @@ def dashboard(request):
         "total_emails": total_emails,
         "total_employees": total_employees,
         "emails_per_month": emails_per_month,
+        "chart_labels": chart_labels,
+        "chart_values": chart_values,
         "top_senders": top_senders,
     }
     return render(request, "dashboard.html", context)
+
+def home(request):
+    return render(request, "home.html")
+
+def conversations(request):
+    return render(request, "conversation.html")
+
+def expediteurs(request):
+    return render(request, "expediteur.html")
+
+def stats(request):
+    total_emails = Email.objects.count()
+    total_employees = Employee.objects.count()
+    top_senders = (
+        Email.objects.values("from_employee__email")
+        .annotate(total=Count("id"))
+        .order_by("-total")[:5]
+    )
+    context = {
+        "total_emails": total_emails,
+        "total_employees": total_employees,
+        "top_senders": top_senders,
+    }
+    return render(request, "stats.html", context)
 
 # --- Recherche avancée (FTS PostgreSQL) ---
 def search_emails(request):
