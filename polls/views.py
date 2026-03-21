@@ -26,7 +26,6 @@ def dashboard(request):
     total_emails = Email.objects.count()
     total_employees = Employee.objects.count()
 
-    # Agrégation par mois
     emails_per_month = (
         Email.objects.exclude(date__isnull=True)
         .annotate(month=TruncMonth("date"))
@@ -35,7 +34,6 @@ def dashboard(request):
         .order_by("month")
     )
 
-    # Prepare chart-ready data so the template JS stays valid.
     monthly_rows = list(emails_per_month)
     chart_labels = [
         row["month"].strftime("%b %Y") if row.get("month") else ""
@@ -59,30 +57,6 @@ def dashboard(request):
     }
     return render(request, "dashboard.html", context)
 
-def home(request):
-    return render(request, "home.html")
-
-def conversations(request):
-    return render(request, "conversation.html")
-
-def expediteurs(request):
-    return render(request, "expediteur.html")
-
-def stats(request):
-    total_emails = Email.objects.count()
-    total_employees = Employee.objects.count()
-    top_senders = (
-        Email.objects.values("from_employee__email")
-        .annotate(total=Count("id"))
-        .order_by("-total")[:5]
-    )
-    context = {
-        "total_emails": total_emails,
-        "total_employees": total_employees,
-        "top_senders": top_senders,
-    }
-    return render(request, "stats.html", context)
-
 # --- Recherche avancée (FTS PostgreSQL) ---
 def search_emails(request):
     q = request.GET.get("q", "").strip()
@@ -92,7 +66,6 @@ def search_emails(request):
 
     qs = Email.objects.select_related("from_employee").all()
 
-    # Full Text Search si mot-clé présent
     if q:
         query = SearchQuery(q)
         qs = qs.annotate(rank=SearchRank("search_vector", query))\
@@ -124,7 +97,6 @@ def search_emails(request):
 
 # --- Détail d'un thread (conversation) ---
 def _collect_descendants(email_obj, collected):
-    """Récupère récursivement toutes les réponses."""
     children = list(email_obj.replies.select_related("from_employee").all().order_by("date", "id"))
     for child in children:
         collected.append(child)
@@ -133,12 +105,10 @@ def _collect_descendants(email_obj, collected):
 def thread_detail(request, email_id):
     selected = get_object_or_404(Email.objects.select_related("from_employee"), id=email_id)
 
-    # Remonter à la racine du thread
     root = selected
     while root.in_reply_to_id:
         root = root.in_reply_to
 
-    # Collecter tous les descendants
     descendants = []
     _collect_descendants(root, descendants)
     conversation = [root] + descendants
@@ -151,19 +121,25 @@ def thread_detail(request, email_id):
     return render(request, "thread_detail.html", context)
 
 # --- Graphe d'influence ---
+from django.db.models import Count, Q
+
 def influence_graph(request):
     user_email = request.GET.get("user", "").strip()
+
     connections = (
-        Email.objects.exclude(to_employees__isnull=True)
-        .values("from_employee__email", "to_employees__email")
-        .annotate(total=Count("id"))
+        Email.objects
+        .values('from_employee__email', 'to_employees__email')
+        .annotate(total=Count('id'))
+        .order_by('-total')
     )
+
     if user_email:
         connections = connections.filter(
             Q(from_employee__email__icontains=user_email) |
             Q(to_employees__email__icontains=user_email)
         )
-    connections = connections.order_by("-total")[:100]
+
+    connections = connections[:100]
 
     context = {
         "connections": connections,

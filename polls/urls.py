@@ -9,6 +9,5 @@ urlpatterns = [
     path('search/', views.search_emails, name='search_emails'),
     path('thread/<int:email_id>/', views.thread_detail, name='thread_detail'),
     path('influence/', views.influence_graph, name='influence_graph'),
-    # Optionnel : liste des emails (si tu veux garder email_list.html)
     path('emails/', views.email_list, name='email_list'),
 ]
