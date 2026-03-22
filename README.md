@@ -16,12 +16,11 @@ https://www.cs.cmu.edu/~enron/
 
 ## 2. Stack technique
 
-- Backend et interface: Django
-- Base de donnees: PostgreSQL 16
-- Recherche plein texte: PostgreSQL FTS (GIN index)
+- Backend et interface: Django 5.2
+- Base de donnees: PostgreSQL 16 (Docker)
+- Recherche plein texte: PostgreSQL FTS (SearchVector + index GIN)
 - Parsing/ingestion: Python (`email`, `re`, `datetime`)
 - Environnement Python: `venv`
-- Base de donnees en conteneur: Docker Compose (`db`)
 - Versionnage: Git
 
 ## 3. Architecture du projet
@@ -124,13 +123,12 @@ Fonctionnalites:
 ### Prerequis
 
 - Python 3.12+
-- `venv`
-- Docker + Docker Compose (utilises uniquement pour PostgreSQL)
+- Docker + Docker Compose
 
 ### 1) Creer et activer l'environnement virtuel
 
 ```bash
-python3.12 -m venv .venv
+python -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
@@ -202,7 +200,7 @@ Configuration PostgreSQL (`docker-compose.yml` + `settings.py`) :
 Compter les emails importes:
 
 ```bash
-python manage.py shell -c "from polls.models import Email; print(Email.objects.count())"
+python3 manage.py shell -c "from polls.models import Email,Employee,Attachment; print('Emails:', Email.objects.count(), 'Employees:', Employee.objects.count(), 'Attachments:', Attachment.objects.count())"
 ```
 
 Compter les fichiers source:
