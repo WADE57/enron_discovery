@@ -171,7 +171,7 @@ Configuration PostgreSQL (`docker-compose.yml` + `settings.py`) :
 
 - Dashboard: `http://127.0.0.1:8000/dashboard/`
 - Recherche avancee: `http://127.0.0.1:8000/search/`
-- Thread detail: `http://127.0.0.1:8000/threads/<email_id>/`
+- Thread detail: `http://127.0.0.1:8000/thread/<email_id>/`
 - Graphe d'influence (optionnel): `http://127.0.0.1:8000/influence/`
 - Admin Django: `http://127.0.0.1:8000/admin/`
 
