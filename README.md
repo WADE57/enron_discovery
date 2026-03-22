@@ -209,6 +209,32 @@ Compter les fichiers source:
 find ./maildir -type f | wc -l
 ```
 
+## 10. Tests
+
+Le projet contient des tests Django dans `polls/tests.py` pour valider les principales fonctionnalités de l'interface:
+
+- page d'accueil (`home`)
+- dashboard (`dashboard`)
+- recherche avancée (`search_emails`)
+- explorateur de threads (`thread_detail`)
+- graphe d'influence (`influence_graph`)
+- liste paginée des emails (`email_list`)
+
+### Lancer les tests
+
+Depuis la racine du projet:
+
+```bash
+source .venv/bin/activate
+docker compose up -d
+python3 manage.py test polls -v 2
+```
+Exécuter un test spécifique
+
+```bash
+python3 manage.py test polls.tests.EnronViewsTestCase.test_search_by_keyword_fts -v 2
+```
+
 <!-- ## 10. Couverture des objectifs du sujet
 
 - Modelisation SQL normalisee: OK
