@@ -1,16 +1,15 @@
-version: '3.8'
-
 services:
   db:
-    image: postgres:14
+    image: postgres:16
+    restart: always
     environment:
       POSTGRES_DB: enron_db
-      POSTGRES_USER: enron_user
-      POSTGRES_PASSWORD: enron_pass
+      POSTGRES_USER: enron
+      POSTGRES_PASSWORD: enron2026
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
 
 volumes:
-  postgres_data:
+  pgdata:
