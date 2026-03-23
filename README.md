@@ -227,12 +227,12 @@ Depuis la racine du projet:
 ```bash
 source .venv/bin/activate
 docker compose up -d
-python3 manage.py test polls -v 2
+python manage.py test polls -v 2
 ```
 Exécuter un test spécifique
 
 ```bash
-python3 manage.py test polls.tests.EnronViewsTestCase.test_search_by_keyword_fts -v 2
+python manage.py test polls.tests.EnronViewsTestCase.test_search_by_keyword_fts -v 2
 ```
 
 <!-- ## 10. Couverture des objectifs du sujet
