@@ -8,15 +8,16 @@ class Employee(models.Model):
     Collaborateur de l'entreprise (une ligne par adresse email).
     """
     name = models.CharField(max_length=200, blank=True)
-    email = models.EmailField(unique=True)
+    email = models.EmailField(unique=True)  # unique =True car chaque employer ne qu'apparaitre une seule fois
 
     def __str__(self):
         return self.email
 
 
-class Folder(models.Model):
+class Folder(models.Model): 
     """
     Dossier / répertoire dans la boîte mail (inbox, sent, etc.).
+    Pour classer les emails et les  retrouver rapidement 
     """
     name = models.CharField(max_length=200)
 
@@ -67,7 +68,7 @@ class Email(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
         related_name="replies",
-    )
+    ) 
 
     # dossier de classement
     folder = models.ForeignKey(

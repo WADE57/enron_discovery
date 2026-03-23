@@ -162,4 +162,4 @@ def email_list(request):
         "emails": emails,
         "stats": stats,
     }
-    return render(request, "email_list.html", context)
+    return render(request, "email_list.html", context)  # 
