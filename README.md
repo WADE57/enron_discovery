@@ -209,6 +209,15 @@ Compter les fichiers source:
 find ./maildir -type f | wc -l
 ```
 
+## 9bis. Qualite des donnees et correction des dates
+
+Le corpus Enron est connu pour contenir des problemes d'integrite (messages rediges, adresses corrigees, en-tetes heterogenes). Pour eviter les dates aberrantes dans les graphiques (ex: annee 2044 issue d'un parsing ambigu), l'import applique une validation simple:
+
+- date invalide ou non parsable => `NULL`
+- annee hors plage plausible du corpus (`1990-2010`) => `NULL`
+
+Cette regle est appliquee a l'import et au dashboard mensuel pour conserver des statistiques coherentes.
+
 ## 10. Tests
 
 Le projet contient des tests Django dans `polls/tests.py` pour valider les principales fonctionnalités de l'interface:

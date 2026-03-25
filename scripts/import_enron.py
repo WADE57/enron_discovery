@@ -11,6 +11,8 @@ from polls.models import Employee, Email, Folder, Attachment
 
 class Command(BaseCommand):
     help = "Import des emails du corpus Enron"
+    MIN_VALID_YEAR = 1990
+    MAX_VALID_YEAR = 2010
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -111,6 +113,19 @@ class Command(BaseCommand):
 
         return self.clean_body(body)
 
+    def parse_email_date(self, date_str):
+        if not date_str:
+            return None
+        try:
+            date = parsedate_to_datetime(date_str)
+        except Exception:
+            return None
+
+        # Some malformed 2-digit years can be interpreted in the future (e.g. 2044).
+        if not date or date.year < self.MIN_VALID_YEAR or date.year > self.MAX_VALID_YEAR:
+            return None
+        return date
+
     # ---------- Commande principale ----------
 
     def handle(self, *args, **options):
@@ -136,6 +151,7 @@ class Command(BaseCommand):
         imported = 0
         errors = 0
         skipped = 0
+        invalid_dates = 0
 
         for root, dirs, files in os.walk(root_path):
 
@@ -156,10 +172,9 @@ class Command(BaseCommand):
                     subject = msg.get("Subject", "") or ""
                     date_str = msg.get("Date")
 
-                    try:
-                        date = parsedate_to_datetime(date_str) if date_str else None
-                    except Exception:
-                        date = None
+                    date = self.parse_email_date(date_str)
+                    if date_str and date is None:
+                        invalid_dates += 1
 
                     from_header = msg.get("From")
 
@@ -262,6 +277,7 @@ class Command(BaseCommand):
         # Résumé final
         self.stdout.write(
             f"Résumé : {processed} fichiers traités, "
-            f"{imported} emails importés, {skipped} ignorés, {errors} erreurs."
+            f"{imported} emails importés, {skipped} ignorés, {errors} erreurs, "
+            f"{invalid_dates} dates invalides."
         )
         self.stdout.write("✅ Import terminé.")

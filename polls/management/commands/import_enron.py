@@ -11,6 +11,8 @@ from polls.models import Employee, Email, Folder, Attachment
 
 class Command(BaseCommand):
     help = "Import des emails du corpus Enron (mode incremental/idempotent)"
+    MIN_VALID_YEAR = 1990
+    MAX_VALID_YEAR = 2010
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -69,6 +71,19 @@ class Command(BaseCommand):
                 body = ""
         return self.clean_body(body)
 
+    def parse_email_date(self, date_str):
+        if not date_str:
+            return None
+        try:
+            date = parsedate_to_datetime(date_str)
+        except Exception:
+            return None
+
+        # Some malformed 2-digit years can be interpreted in the future (e.g. 2044).
+        if not date or date.year < self.MIN_VALID_YEAR or date.year > self.MAX_VALID_YEAR:
+            return None
+        return date
+
     def handle(self, *args, **options):
         root_path = options["path"]
 
@@ -95,6 +110,7 @@ class Command(BaseCommand):
         skipped = 0
         errors = 0
         fts_skipped = 0
+        invalid_dates = 0
 
         unknown_sender, _ = Employee.objects.get_or_create(
             email="unknown@enron.local",
@@ -128,10 +144,9 @@ class Command(BaseCommand):
                             )
                         continue
 
-                    try:
-                        date = parsedate_to_datetime(date_str) if date_str else None
-                    except Exception:
-                        date = None
+                    date = self.parse_email_date(date_str)
+                    if date_str and date is None:
+                        invalid_dates += 1
 
                     from_header = msg.get("From")
                     to_addrs = self.parse_addresses(msg.get("To"))
@@ -220,6 +235,7 @@ class Command(BaseCommand):
 
         self.stdout.write(
             f"Resume: traites={processed}, importes={imported}, deja={already_exists}, "
-            f"ignores={skipped}, erreurs={errors}, fts_non_indexes={fts_skipped}"
+            f"ignores={skipped}, erreurs={errors}, fts_non_indexes={fts_skipped}, "
+            f"dates_invalides={invalid_dates}"
         )
         self.stdout.write("Import termine")

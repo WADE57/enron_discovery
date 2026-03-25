@@ -5,6 +5,9 @@ from django.core.paginator import Paginator
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from .models import Email, Employee
 
+MIN_VALID_YEAR = 1990
+MAX_VALID_YEAR = 2010
+
 # --- Accueil ---
 def home(request):
     total_emails = Email.objects.count()
@@ -28,6 +31,7 @@ def dashboard(request):
 
     emails_per_month = (
         Email.objects.exclude(date__isnull=True)
+        .filter(date__year__gte=MIN_VALID_YEAR, date__year__lte=MAX_VALID_YEAR)
         .annotate(month=TruncMonth("date"))
         .values("month")
         .annotate(total=Count("id"))
