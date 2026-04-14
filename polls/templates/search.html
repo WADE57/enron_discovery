@@ -23,49 +23,54 @@
         </div>
     </form>
 
+    {% if search_hint %}
+    <div class="alert alert-info">{{ search_hint }}</div>
+    {% endif %}
+
     <p class="text-muted">{{ total_results }} résultat(s) trouvé(s)</p>
 
     <div class="list-group">
-        {% for email in page_obj %}
-            <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-start">
-                <div class="ms-2 me-auto">
-                    <div class="fw-bold">{{ email.subject|default:"(Sans sujet)" }}</div>
-                    <small class="text-muted">
-                        De : {{ email.from_employee.email|default:"Inconnu" }} |
-                        Date : {{ email.date|date:"d M Y H:i"|default:"Inconnue" }}
-                    </small>
-                </div>
-                <a href="{% url 'enron:thread_detail' email.id %}" class="btn btn-sm btn-outline-primary">Voir le thread</a>
+        {% for email in emails %}
+        <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-start">
+            <div class="ms-2 me-auto">
+                <div class="fw-bold">{{ email.subject|default:"(Sans sujet)" }}</div>
+                <small class="text-muted">
+                    De : {{ email.from_employee.email|default:"Inconnu" }} |
+                    Date : {{ email.date|date:"d M Y H:i"|default:"Inconnue" }}
+                </small>
             </div>
+            <a href="{% url 'enron:thread_detail' email.id %}" class="btn btn-sm btn-outline-primary">Voir le thread</a>
+        </div>
         {% empty %}
-            <div class="alert alert-info">Aucun email trouvé.</div>
+        <div class="alert alert-info">Aucun email trouvé.</div>
         {% endfor %}
     </div>
 
     <!-- Pagination -->
-    {% if page_obj.has_other_pages %}
-        <nav aria-label="Pagination" class="mt-4">
-            <ul class="pagination justify-content-center">
-                {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ q }}&sender={{ sender }}&date_from={{ date_from }}&date_to={{ date_to }}">Précédent</a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled"><span class="page-link">Précédent</span></li>
-                {% endif %}
+    {% if enable_pagination and has_previous or has_next %}
+    <nav aria-label="Pagination" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if has_previous %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ previous_page }}&q={{ q }}&sender={{ sender }}&date_from={{ date_from }}&date_to={{ date_to }}">Précédent</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Précédent</span></li>
+            {% endif %}
 
-                <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+            <li class="page-item disabled"><span class="page-link">Page {{ current_page }}</span></li>
 
-                {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ q }}&sender={{ sender }}&date_from={{ date_from }}&date_to={{ date_to }}">Suivant</a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled"><span class="page-link">Suivant</span></li>
-                {% endif %}
-            </ul>
-        </nav>
+            {% if has_next %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="?page={{ next_page }}&q={{ q }}&sender={{ sender }}&date_from={{ date_from }}&date_to={{ date_to }}">Suivant</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Suivant</span></li>
+            {% endif %}
+        </ul>
+    </nav>
     {% endif %}
 </div>
 {% endblock %}
-
