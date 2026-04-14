@@ -21,23 +21,24 @@
             <p><strong>Destinataires :</strong> {{ selected.to_employees.all|join:", "|default:"Aucun" }}</p>
             <hr>
             <p><strong>Corps du message :</strong></p>
-            <div class="border p-3 bg-light" style="white-space: pre-wrap;">{{ selected.body|default:"(Corps vide)" }}</div>
+            <div class="border p-3 bg-light" style="white-space: pre-wrap;">{{ selected.body|default:"(Corps vide)" }}
+            </div>
         </div>
     </div>
 
     <h4 class="mb-3">Conversation complète</h4>
     <div class="list-group">
         {% for email in conversation %}
-            <div class="list-group-item {% if email.id == selected.id %}list-group-item-primary{% endif %}">
-                <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1">{{ email.subject|default:"(Sans sujet)" }}</h6>
-                    <small>{{ email.date|date:"d M Y H:i"|default:"Date inconnue" }}</small>
-                </div>
-                <p class="mb-1"><strong>{{ email.from_employee.email|default:"Inconnu" }}</strong></p>
-                <p class="mb-1 text-truncate">{{ email.body|default:""|truncatechars:150 }}</p>
+        <div class="list-group-item {% if email.id == selected.id %}list-group-item-primary{% endif %}">
+            <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">{{ email.subject|default:"(Sans sujet)" }}</h6>
+                <small>{{ email.date|date:"d M Y H:i"|default:"Date inconnue" }}</small>
             </div>
+            <p class="mb-1"><strong>{{ email.from_employee.email|default:"Inconnu" }}</strong></p>
+            <p class="mb-1" style="white-space: pre-wrap;">{{ email.body|default:"" }}</p>
+        </div>
         {% empty %}
-            <div class="alert alert-warning">Aucun message dans ce thread.</div>
+        <div class="alert alert-warning">Aucun message dans ce thread.</div>
         {% endfor %}
     </div>
 </div>
