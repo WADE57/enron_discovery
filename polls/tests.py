@@ -89,8 +89,8 @@ class EnronViewsTestCase(TestCase):
         response = self.client.get(reverse("enron:search_emails"), {"q": "strategy"})
         self.assertEqual(response.status_code, 200)
 
-        page_obj = response.context["page_obj"]
-        ids = {e.id for e in page_obj.object_list}
+        emails = response.context["emails"]
+        ids = {e.id for e in emails}
 
         self.assertIn(self.root_email.id, ids)
         self.assertIn(self.reply_1.id, ids)
@@ -104,12 +104,27 @@ class EnronViewsTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 200)
 
-        page_obj = response.context["page_obj"]
-        ids = {e.id for e in page_obj.object_list}
+        emails = response.context["emails"]
+        ids = {e.id for e in emails}
 
         self.assertIn(self.reply_2.id, ids)
         self.assertIn(self.other_email.id, ids)
         self.assertNotIn(self.root_email.id, ids)
+
+    def test_search_without_filters_returns_paginated_results(self):
+        response = self.client.get(reverse("enron:search_emails"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(str(response.context["total_results"]), "4")
+        self.assertTrue(response.context["search_hint"])
+        self.assertTrue(response.context["enable_pagination"])
+        self.assertEqual(response.context["current_page"], 1)
+
+        emails = response.context["emails"]
+        ids = {e.id for e in emails}
+        self.assertIn(self.root_email.id, ids)
+        self.assertIn(self.reply_1.id, ids)
+        self.assertIn(self.reply_2.id, ids)
+        self.assertIn(self.other_email.id, ids)
 
     def test_search_by_date_range(self):
         date_from = (timezone.now() - timedelta(days=2)).date().isoformat()
@@ -119,8 +134,8 @@ class EnronViewsTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 200)
 
-        page_obj = response.context["page_obj"]
-        ids = {e.id for e in page_obj.object_list}
+        emails = response.context["emails"]
+        ids = {e.id for e in emails}
 
         self.assertIn(self.reply_1.id, ids)
         self.assertIn(self.reply_2.id, ids)
