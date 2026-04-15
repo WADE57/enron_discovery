@@ -26,5 +26,4 @@ data/emails.csv
 *.fls
 *.blg
 *.bbl
-*.pdf
 *.ipynb_checkpoints
