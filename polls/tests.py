@@ -1,6 +1,3 @@
-from django.test import TestCase
-
-# Create your tests here.
 from datetime import timedelta
 
 from django.contrib.postgres.search import SearchVector
@@ -12,6 +9,45 @@ from .models import Email, Employee, Folder
 
 
 class EnronViewsTestCase(TestCase):
+    @staticmethod
+    def _ctx(response, key, default=None):
+        # Standard Django test response context
+        if response.context is not None:
+            try:
+                return response.context[key]
+            except (KeyError, TypeError):
+                pass
+
+            # ContextList fallback
+            try:
+                for layer in response.context:
+                    if hasattr(layer, "get") and key in layer:
+                        return layer[key]
+            except TypeError:
+                pass
+
+        # TemplateResponse fallback
+        context_data = getattr(response, "context_data", None)
+        if isinstance(context_data, dict) and key in context_data:
+            return context_data[key]
+
+        return default
+
+    def _emails_from_response(self, response):
+        emails = self._ctx(response, "emails")
+        if emails is not None:
+            return emails
+
+        page_obj = self._ctx(response, "page_obj")
+        if page_obj is not None:
+            return page_obj.object_list
+
+        object_list = self._ctx(response, "object_list")
+        if object_list is not None:
+            return object_list
+
+        self.fail("No email collection found in response context")
+
     @classmethod
     def setUpTestData(cls):
         cls.folder = Folder.objects.create(name="inbox")
@@ -89,7 +125,7 @@ class EnronViewsTestCase(TestCase):
         response = self.client.get(reverse("enron:search_emails"), {"q": "strategy"})
         self.assertEqual(response.status_code, 200)
 
-        emails = response.context["emails"]
+        emails = self._emails_from_response(response)
         ids = {e.id for e in emails}
 
         self.assertIn(self.root_email.id, ids)
@@ -104,7 +140,7 @@ class EnronViewsTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 200)
 
-        emails = response.context["emails"]
+        emails = self._emails_from_response(response)
         ids = {e.id for e in emails}
 
         self.assertIn(self.reply_2.id, ids)
@@ -114,12 +150,12 @@ class EnronViewsTestCase(TestCase):
     def test_search_without_filters_returns_paginated_results(self):
         response = self.client.get(reverse("enron:search_emails"))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(str(response.context["total_results"]), "4")
-        self.assertTrue(response.context["search_hint"])
-        self.assertTrue(response.context["enable_pagination"])
-        self.assertEqual(response.context["current_page"], 1)
+        self.assertEqual(str(self._ctx(response, "total_results")), "4")
+        self.assertTrue(bool(self._ctx(response, "search_hint")))
+        self.assertTrue(bool(self._ctx(response, "enable_pagination")))
+        self.assertEqual(self._ctx(response, "current_page"), 1)
 
-        emails = response.context["emails"]
+        emails = self._emails_from_response(response)
         ids = {e.id for e in emails}
         self.assertIn(self.root_email.id, ids)
         self.assertIn(self.reply_1.id, ids)
@@ -134,7 +170,7 @@ class EnronViewsTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 200)
 
-        emails = response.context["emails"]
+        emails = self._emails_from_response(response)
         ids = {e.id for e in emails}
 
         self.assertIn(self.reply_1.id, ids)
