@@ -1,12 +1,44 @@
 from django.shortcuts import render, get_object_or_404
+from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.db.models.functions import TruncMonth
-from django.core.paginator import Paginator
 from django.contrib.postgres.search import SearchQuery, SearchRank
 from .models import Email, Employee
 
 MIN_VALID_YEAR = 1990
 MAX_VALID_YEAR = 2010
+SEARCH_PAGE_SIZE = 20
+
+
+def _paginate_without_count(qs, page_str, per_page=SEARCH_PAGE_SIZE):
+    try:
+        page = int(page_str or 1)
+    except (TypeError, ValueError):
+        page = 1
+    if page < 1:
+        page = 1
+
+    start = (page - 1) * per_page
+    rows = list(qs[start : start + per_page + 1])
+    has_next = len(rows) > per_page
+    emails = rows[:per_page]
+
+    return {
+        "emails": emails,
+        "current_count": len(emails),
+        "current_page": page,
+        "has_previous": page > 1,
+        "previous_page": page - 1,
+        "has_next": has_next,
+        "next_page": page + 1,
+    }
+
+
+def _result_label(pagination, per_page=SEARCH_PAGE_SIZE):
+    shown_until = (pagination["current_page"] - 1) * per_page + pagination["current_count"]
+    if pagination["has_next"]:
+        return f"{shown_until}+"
+    return shown_until
 
 # --- Accueil ---
 def home(request):
@@ -68,15 +100,9 @@ def search_emails(request):
     date_from = request.GET.get("date_from", "")
     date_to = request.GET.get("date_to", "")
 
-    qs = Email.objects.select_related("from_employee").all()
+    has_filters = any([q, sender, date_from, date_to])
 
-    if q:
-        query = SearchQuery(q)
-        qs = qs.annotate(rank=SearchRank("search_vector", query))\
-               .filter(rank__gte=0.01)\
-               .order_by("-rank", "-date")
-    else:
-        qs = qs.order_by("-date")
+    qs = Email.objects.select_related("from_employee").all()
 
     if sender:
         qs = qs.filter(from_employee__email__icontains=sender)
@@ -85,17 +111,30 @@ def search_emails(request):
     if date_to:
         qs = qs.filter(date__date__lte=date_to)
 
-    paginator = Paginator(qs, 20)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+    if q:
+        query = SearchQuery(q)
+        qs = qs.filter(search_vector=query)\
+               .annotate(rank=SearchRank("search_vector", query))\
+               .order_by("-rank", "-date")
+    else:
+        qs = qs.order_by("-date")
+
+    pagination = _paginate_without_count(qs, request.GET.get("page"))
 
     context = {
-        "page_obj": page_obj,
+        "emails": pagination["emails"],
+        "current_page": pagination["current_page"],
+        "has_previous": pagination["has_previous"],
+        "previous_page": pagination["previous_page"],
+        "has_next": pagination["has_next"],
+        "next_page": pagination["next_page"],
         "q": q,
         "sender": sender,
         "date_from": date_from,
         "date_to": date_to,
-        "total_results": qs.count(),
+        "total_results": _result_label(pagination),
+        "search_hint": "Affichage de tous les emails (pagine). Ajoutez des filtres pour affiner." if not has_filters else "",
+        "enable_pagination": True,
     }
     return render(request, "search.html", context)
 
