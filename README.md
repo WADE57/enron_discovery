@@ -137,9 +137,6 @@ pip install -r requirements.txt
 ### 2) Demarrer PostgreSQL (Docker)
 
 ```bash
-# Depuis la racine du projet, entrer dans le dossier contenant manage.py
-cd enron_discovery
-
 docker compose up -d
 docker compose ps
 ```
