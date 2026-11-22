@@ -128,7 +128,7 @@ Fonctionnalites:
 ### 1) Creer et activer l'environnement virtuel
 
 ```bash
-# Depuis la racine du projet, entrer dans le dossier contenant manage.py
+# Depuis la racine du projet, entrer dans le dossier(enron_discovery) contenant manage.py
 cd enron_discovery
 
 python -m venv .venv
