@@ -128,6 +128,9 @@ Fonctionnalites:
 ### 1) Creer et activer l'environnement virtuel
 
 ```bash
+# Depuis la racine du projet, entrer dans le dossier contenant manage.py
+cd enron_discovery
+
 python -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
