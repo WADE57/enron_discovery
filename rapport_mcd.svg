@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="850" viewBox="0 0 1400 850">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 z" fill="#334155"/>
+    </marker>
+    <marker id="arrow-start" markerWidth="10" markerHeight="10" refX="2" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M10,0 L0,5 L10,10 z" fill="#334155"/>
+    </marker>
+    <style>
+      .entity { fill: #f8fafc; stroke: #1e3a8a; stroke-width: 3; rx: 12; }
+      .head { fill: #1e3a8a; }
+      .title { fill: white; font-family: sans-serif; font-size: 25px; font-weight: bold; }
+      .field { fill: #0f172a; font-family: sans-serif; font-size: 20px; }
+      .relation { fill: none; stroke: #334155; stroke-width: 3; marker-end: url(#arrow); }
+      .many { fill: none; stroke: #334155; stroke-width: 3; marker-start: url(#arrow-start); marker-end: url(#arrow); }
+      .label { fill: #0f172a; font-family: sans-serif; font-size: 18px; }
+      .note { fill: #475569; font-family: sans-serif; font-size: 17px; }
+    </style>
+  </defs>
+  <rect width="1400" height="850" fill="white"/>
+  <text x="40" y="52" fill="#0f172a" font-family="sans-serif" font-size="29" font-weight="bold">Modèle conceptuel des données — Enron Discovery</text>
+
+  <g>
+    <rect class="entity" x="55" y="280" width="310" height="245"/>
+    <path class="head" d="M67 280 H353 Q365 280 365 292 V337 H55 V292 Q55 280 67 280 Z"/>
+    <text class="title" x="80" y="319">EMPLOYEE</text>
+    <text class="field" x="80" y="376">PK  id</text>
+    <text class="field" x="80" y="414">UQ  email</text>
+    <text class="field" x="80" y="452">name</text>
+    <text class="note" x="80" y="496">Personne / adresse email</text>
+  </g>
+
+  <g>
+    <rect class="entity" x="500" y="285" width="390" height="340"/>
+    <path class="head" d="M512 285 H878 Q890 285 890 297 V342 H500 V297 Q500 285 512 285 Z"/>
+    <text class="title" x="525" y="324">EMAIL</text>
+    <text class="field" x="525" y="382">PK  id</text>
+    <text class="field" x="525" y="420">UQ  message_id</text>
+    <text class="field" x="525" y="458">date, subject, body</text>
+    <text class="field" x="525" y="496">FK  from_employee_id</text>
+    <text class="field" x="525" y="534">FK  folder_id (nullable)</text>
+    <text class="field" x="525" y="572">FK  in_reply_to_id (nullable)</text>
+    <text class="field" x="525" y="610">search_vector</text>
+  </g>
+
+  <g>
+    <rect class="entity" x="1030" y="155" width="310" height="190"/>
+    <path class="head" d="M1042 155 H1328 Q1340 155 1340 167 V212 H1030 V167 Q1030 155 1042 155 Z"/>
+    <text class="title" x="1055" y="194">FOLDER</text>
+    <text class="field" x="1055" y="251">PK  id</text>
+    <text class="field" x="1055" y="289">name</text>
+    <text class="note" x="1055" y="325">Dossier source</text>
+  </g>
+
+  <g>
+    <rect class="entity" x="1030" y="540" width="310" height="225"/>
+    <path class="head" d="M1042 540 H1328 Q1340 540 1340 552 V597 H1030 V552 Q1030 540 1042 540 Z"/>
+    <text class="title" x="1055" y="579">ATTACHMENT</text>
+    <text class="field" x="1055" y="636">PK  id</text>
+    <text class="field" x="1055" y="674">FK  email_id</text>
+    <text class="field" x="1055" y="712">filename, type, size</text>
+    <text class="note" x="1055" y="747">Métadonnées seulement</text>
+  </g>
+
+  <path class="relation" d="M365 357 C420 330 445 330 500 357"/>
+  <text class="label" x="372" y="302">envoie (1,N)</text>
+
+  <path class="many" d="M500 545 C445 615 420 615 365 495"/>
+  <text class="label" x="368" y="680">destinataires To / Cc / Bcc (N,N)</text>
+
+  <path class="relation" d="M1030 285 C975 285 955 365 890 365"/>
+  <text class="label" x="900" y="250">contient (1,N)</text>
+
+  <path class="relation" d="M890 580 C955 600 970 635 1030 650"/>
+  <text class="label" x="895" y="665">possède (1,N)</text>
+
+  <path class="relation" d="M575 285 C540 190 850 190 815 285"/>
+  <text class="label" x="570" y="177">réponse : parent (0,1) / réponses (0,N)</text>
+
+  <text class="note" x="40" y="812">PK : clé primaire · FK : clé étrangère · UQ : valeur unique. Les tables de liaison M:N sont générées par Django.</text>
+</svg>
