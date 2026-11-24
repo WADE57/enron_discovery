@@ -4,7 +4,7 @@ subtitle: "Rapport de projet — Structuration des données"
 author:
   - "WADE Abdou"
   - "TCHAGANO Bahissou"
-date: "21 Mars 2026"
+date: "19 Mars 2026"
 lang: fr-FR
 ---
 
